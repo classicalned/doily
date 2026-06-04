@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Find the Drink</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    min-height: 100vh;
+    background: #0a0a0a;
+    color: #e8e0d4;
+    font-family: Georgia, 'Times New Roman', serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+    overflow: hidden;
+  }
+  .wrap { max-width: 500px; width: 100%; text-align: center; }
+  .title {
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: #5a5347;
+    margin-bottom: 10px;
+  }
+  .title-line {
+    width: 40px;
+    height: 1px;
+    background: #c4362a;
+    margin: 0 auto 48px;
+  }
+  .label {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #5a5347;
+    margin-bottom: 10px;
+  }
+  .anchor-text {
+    font-size: 20px;
+    color: #b8af9a;
+    line-height: 1.4;
+    font-style: italic;
+    padding: 0 12px;
+    margin-bottom: 40px;
+  }
+  .drink-box {
+    background: #111110;
+    border: 1px solid #1e1c19;
+    padding: 36px 28px;
+    margin-bottom: 32px;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .drink-hidden {
+    font-size: 14px;
+    color: #2a2622;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .drink-text {
+    font-size: 36px;
+    font-weight: 400;
+    color: #e8e0d4;
+    line-height: 1.2;
+  }
+  .timer-num {
+    font-size: 56px;
+    font-weight: 300;
+    font-family: 'Courier New', monospace;
+    margin-bottom: 10px;
+    transition: color 0.3s;
+  }
+  .timer-bar-bg {
+    width: 100%;
+    height: 3px;
+    background: #1e1c19;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+  .timer-bar {
+    height: 100%;
+    transition: width 1s linear, background 0.3s;
+  }
+  .time-up {
+    font-size: 14px;
+    color: #c4362a;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+  .btn {
+    width: 100%;
+    padding: 14px 40px;
+    font-size: 15px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    font-family: Georgia, 'Times New Roman', serif;
+    border: none;
+    -webkit-appearance: none;
+  }
+  .btn-go {
+    background: #c4362a;
+    color: #e8e0d4;
+  }
+  .btn-next {
+    background: transparent;
+    color: #8a7e6b;
+    border: 1px solid #2a2622;
+    font-size: 13px;
+    letter-spacing: 0.15em;
+  }
+  .btn:active { opacity: 0.8; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="title">BRIDGE DRILL</div>
+  <div class="title-line"></div>
+
+  <div class="label">THE ANCHOR</div>
+  <div class="anchor-text" id="anchor"></div>
+
+  <div class="drink-box" id="drinkBox">
+    <div class="drink-hidden" id="drinkHidden">DRINK HIDDEN</div>
+    <div id="drinkLabel" class="label" style="display:none;margin-bottom:10px;">THE DRINK</div>
+    <div class="drink-text" id="drinkText" style="display:none;"></div>
+  </div>
+
+  <div id="timerArea" style="display:none;">
+    <div class="timer-num" id="timerNum">20</div>
+    <div class="timer-bar-bg"><div class="timer-bar" id="timerBar"></div></div>
+  </div>
+
+  <div class="time-up" id="timeUp" style="display:none;">TIME</div>
+
+  <button class="btn btn-go" id="goBtn" onclick="go()">GO</button>
+  <button class="btn btn-next" id="nextBtn" onclick="next()" style="display:none;">NEXT</button>
+</div>
+
+<script>
+var DRINKS = [
+  "Old Fashioned","Negroni","Vodka Soda","Espresso Martini",
+  "Red Wine","White Wine","Margarita","Beer","Manhattan",
+  "Whiskey Neat","Gin & Tonic","Mojito","Cosmopolitan",
+  "Long Island Iced Tea","Tequila Shot","Water","Rum & Coke",
+  "Aperol Spritz","Champagne","Moscow Mule","Paloma",
+  "Dirty Martini","Scotch on the Rocks","Daiquiri","Sazerac",
+  "Piña Colada","Irish Coffee","Sangria","Hennessy",
+  "Jack & Coke","Amaretto Sour","Hot Toddy","Midori Sour",
+  "White Russian","Boulevardier","French 75","Dark & Stormy",
+  "Whiskey Sour","Lemon Drop","Mai Tai","Sidecar",
+  "Tom Collins","Corpse Reviver","Penicillin","Last Word",
+  "Ranch Water","Caipirinha","Mezcal Mule","Frosé",
+  "Fireball Shot","Jägerbomb","Rosé","Malbec",
+  "Pinot Grigio","Prosecco","Mimosa","Bellini",
+  "Negroni Sbagliato","Gin Fizz","Ramos Gin Fizz","Aviation",
+  "Bee's Knees","Paper Plane","Naked & Famous","Jungle Bird",
+  "Painkiller","Zombie","Hurricane","Pisco Sour",
+  "Vieux Carré","Mint Julep","Chartreuse","Fernet",
+  "Amaro","Limoncello","Sambuca","Grappa",
+  "Sake","Soju","Michelada","Paloma Rosa",
+  "Tequila Sunrise","Screwdriver","Greyhound","Cape Cod",
+  "Sea Breeze","Madras","Harvey Wallbanger","Grasshopper",
+  "Brandy Alexander","Rob Roy","Blood & Sand","Gimlet",
+  "Vesper","Porn Star Martini","Lychee Martini","Cucumber Martini",
+  "Espresso","Iced Tea","Arnold Palmer","Shirley Temple",
+  "Diet Coke","Ginger Beer","Club Soda with Lime","Kombucha"
+];
+
+var ANCHORS = [
+  "Only person wearing glasses",
+  "Only one in red",
+  "Only one in green",
+  "Only one in blue",
+  "Only one in white",
+  "Only one in yellow or gold",
+  "Wearing a hat",
+  "Has visible tattoos",
+  "Wearing pearls or fine jewelry",
+  "Oldest of the four",
+  "Youngest of the four",
+  "Only one in a suit or blazer",
+  "Most casually dressed of the four",
+  "Wearing a notable watch",
+  "Has a beard",
+  "Only woman of the four",
+  "Only man of the four",
+  "Tallest of the four",
+  "Shortest of the four",
+  "Wearing heels",
+  "Has curly hair",
+  "Only one with short hair",
+  "Only one with long hair",
+  "Wearing a scarf or shawl",
+  "Most animated — big gestures, expressive",
+  "Quietest — barely moved since sitting down",
+  "Wearing all black",
+  "Only one with a ring on",
+  "Has their phone on the table",
+  "Arms crossed",
+  "Only one who came alone",
+  "Wearing boots",
+  "Only one with a bag or purse on the chair",
+  "Leaning back in their chair",
+  "Leaning forward — elbows on the table",
+  "Wearing a leather jacket",
+  "Has a pin or brooch on",
+  "Only one drinking water while waiting",
+  "Wearing sunglasses pushed up on their head",
+  "Only one with a wedding band",
+  "Wearing a flannel or plaid",
+  "Only one in a dress",
+  "Only one in sneakers",
+  "Has a lanyard or badge visible",
+  "Wearing a necklace with a pendant",
+  "Only one with a tan",
+  "Sitting with legs crossed",
+  "Only one who hasn't looked at their phone",
+  "Wearing a denim jacket",
+  "Only one with earrings"
+];
+
+var currentAnchor = "";
+var currentDrink = "";
+var timeLeft = 20;
+var timer = null;
+
+function rand(arr, exclude) {
+  var pick;
+  do { pick = arr[Math.floor(Math.random() * arr.length)]; } while (pick === exclude);
+  return pick;
+}
+
+function setAnchor() {
+  currentAnchor = rand(ANCHORS, currentAnchor);
+  document.getElementById("anchor").textContent = currentAnchor;
+}
+
+function go() {
+  currentDrink = rand(DRINKS);
+  document.getElementById("drinkHidden").style.display = "none";
+  document.getElementById("drinkLabel").style.display = "block";
+  document.getElementById("drinkText").style.display = "block";
+  document.getElementById("drinkText").textContent = currentDrink;
+  document.getElementById("goBtn").style.display = "none";
+  document.getElementById("nextBtn").style.display = "block";
+  document.getElementById("timeUp").style.display = "none";
+  document.getElementById("timerArea").style.display = "block";
+
+  timeLeft = 20;
+  updateTimer();
+  timer = setInterval(function() {
+    timeLeft--;
+    updateTimer();
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      document.getElementById("timerArea").style.display = "none";
+      document.getElementById("timeUp").style.display = "block";
+    }
+  }, 1000);
+}
+
+function updateTimer() {
+  var el = document.getElementById("timerNum");
+  var bar = document.getElementById("timerBar");
+  el.textContent = timeLeft;
+  el.style.color = timeLeft <= 5 ? "#c4362a" : "#e8e0d4";
+  bar.style.width = ((timeLeft / 20) * 100) + "%";
+  bar.style.background = timeLeft <= 5 ? "#c4362a" : "#8a7e6b";
+}
+
+function next() {
+  clearInterval(timer);
+  document.getElementById("drinkHidden").style.display = "block";
+  document.getElementById("drinkLabel").style.display = "none";
+  document.getElementById("drinkText").style.display = "none";
+  document.getElementById("timerArea").style.display = "none";
+  document.getElementById("timeUp").style.display = "none";
+  document.getElementById("goBtn").style.display = "block";
+  document.getElementById("nextBtn").style.display = "none";
+  setAnchor();
+}
+
+setAnchor();
+</script>
+
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./sw.js');
+  });
+}
+</script>
+</body>
+</html>
