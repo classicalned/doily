@@ -1,4 +1,4 @@
-const CACHE_NAME = 'find-the-drink-v1';
+const CACHE_NAME = 'find-the-drink-v2';
 
 const FILES_TO_CACHE = [
   './',
